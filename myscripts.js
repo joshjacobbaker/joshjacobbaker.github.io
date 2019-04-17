@@ -41,11 +41,11 @@ window.onload=changeImg;
 
 // Second 
 
-/*
+
 
 var j = 0; 			// Start Point
 var imagesj = [];	// Images Array
-var timej = 2000;	// Time Between Switch
+var time = 2000;	// Time Between Switch
 	 
 // Image List
 imagesj[0] = "Nylatech_Before_Forklift.PNG";
@@ -64,7 +64,7 @@ imagesj[12] = "Nylatech_After_Forklift.PNG";
 
 
 // Change Image
-function changejImg(){
+function changeImg(){
 	document.slidej.src = imagesj[j];
 
 	// Check If Index Is Under Max
@@ -77,9 +77,9 @@ function changejImg(){
 	}
 
 	// Run function every x seconds
-	setTimeout("changejImg()", timej);
+	setTimeout("changeImg()", time);
 }
 
 // Run function when page loads
-window.onload=changejImg;
-*/
+window.onload=changeImg;
+
