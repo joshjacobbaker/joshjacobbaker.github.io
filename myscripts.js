@@ -14,10 +14,10 @@ images[6] = "Nylatech_Project_Step_6.PNG";
 images[7] = "Nylatech_Project_Step_7.PNG";
 images[8] = "Nylatech_Project_Step_8.PNG";
 images[9] = "Nylatech_Project_Step_9.PNG";
-images[10] = "Nylatech_Project_Step_10.PNG";
-images[11] = "Nylatech_Project_Step_11.PNG";
-images[12] = "Nylatech_Project_Step_12.PNG";
-images[13] = "Nylatech_After_Forklift.PNG";
+images[10] = "Nylatech_Project_Step_11.PNG";
+images[11] = "Nylatech_Project_Step_12.PNG";
+images[12] = "Nylatech_After_Forklift.PNG";
+
 
 // Change Image
 function changeImg(){
