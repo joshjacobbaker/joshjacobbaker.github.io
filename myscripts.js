@@ -1,7 +1,7 @@
 
 var i = 0; 			// Start Point
 var images = [];	// Images Array
-var time = 3000;	// Time Between Switch
+var time = 2000;	// Time Between Switch
 	 
 // Image List
 images[0] = "Nylatech_Before_Forklift.PNG";
