@@ -41,7 +41,7 @@ window.onload=changeImg;
 
 // Second 
 
-
+/*
 
 var j = 0; 			// Start Point
 var imagesj = [];	// Images Array
@@ -82,3 +82,4 @@ function changejImg(){
 
 // Run function when page loads
 window.onload=changejImg;
+*/
