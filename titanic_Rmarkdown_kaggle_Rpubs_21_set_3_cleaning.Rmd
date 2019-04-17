@@ -1,0 +1,1438 @@
+---
+title: "Titanic Dataset"
+author: "Joshua Baker"
+date: "April 11th, 2019"
+output: 
+  html_document:
+  theme: "darkly"
+  highlight: "espresso"
+
+---
+
+![](C:/Users/joshu/Documents/DataScience/Kaggle/Titanic/titanic_smartphone_picture.jpg)
+
+
+
+
+# OUTLINE {.tabset .tabset-fade .tabset-pills}
+
+## Outline
+
+## Executive Summary
+
+Kaggle's **Titanic: Machine Learning from Disaster**  
+
+Key Findings:
+Girls were more likely to survive.  
+1st class was more likely to survive.  
+younger people were more likely to survive.  
+No women died and no men survived in the test set, consisting of 418 records, which differed from our training, in that both sexes died and survived. 
+However, in our training set, women were far more likely to survive than men.
+
+
+Training:
+We improved on our base glm model through randomizing our training set records
+We also used a 10-fold cross-validating technique for model and hyper-parameter selection
+
+
+Outliers and leveraged points:
+The vast majority of our standardized residuals +/- 2 standard deviations were from 3rd class surviving men or 1st class dying women, opposite of our prediction.
+We identified and filtered out "outliers" on an +/- 2 standard deviation rule of thumb and found our glm models improving, but our random forest's degrading. 
+We identified and filtered out "leverage points" for those observations with a cooks distance greater than .07 ### Fact Check this.
+
+
+Feature:
+One hot encoding...
+Combining multi-collinear variables
+
+
+Cost Function:
+Minimize... Dist Function: I created a distance function which sought to minimize the distance between perfect sensitivity and specificity--improved glm models.
+Maximize... Accuracy Function: The default Accuracy function performed the best of all three of the functions when it came to optimizing a models accuracy.
+Maximize... Roc cost function: Rather than the default, Accuracy function, I tried optimizing for ROC and saw that our models....
+
+
+Models:
+We boosted our models by expanding the grid search space for the optimal hyper-parameters 
+        Increasing alpha and lambda for glmnet
+        Increasing k for knn
+        Increasing mtry for RF
+
+
+Performance:
+
+Our base glm model performed well.  
+Worst performing cross-validated algorithm
+Worst performing predictive algorithm
+Best performing cross-validated algorithm
+Best performing predictive algorithm
+Ensemble algorithms...
+Stack algorithms...
+
+
+
+## Table of Contents 
+
+[Outline]
+
+[KAGGLE DATA]
+
+[READ FILES]
+
+[CLEAN DATA]
+
+[STATISTICAL ASSUMPTIONS]
+
+
+# KAGGLE DATA {.tabset .tabset-fade .tabset-pills}
+
+## Kaggle Data
+
+## Summary
+
+Kaggle hosts machine learning competitions online.
+
+## About the Titanic Data
+
+The **"Titanic: Machine Learning from Disaster"** dataset, lists off which passengers survived the tragedy and didn't, along with their passenger demographic information, such as: PassengerId, Name, Class, Age, Sex, etc. Kaggle provides us with 3 files: training, testing and submission. The training set consists of **891 records, 11 features, and 1 binary response variable--Survived.** The test set is comprised of **481 records, 11 features, and the binary response variable--survived.** The submission file provides us with the PassengerId's from the test set with a Survived value--values we'll be predicting.
+
+
+## Download Kaggle Titanic Datsets
+
+Download the Titanic datasets here: [Download Kaggle Titanic Datasets Here](https://www.kaggle.com/c/titanic/data)
+
+# LOAD LIBRARIES {.tabset .tabset-fade .tabset-pills}
+
+## Load Libraries
+
+## Summary
+
+Load **R** packages into working environment
+
+## Load
+
+```{r, results= 'hide', message=FALSE}
+library(readr)
+library(tidyr)
+library(Amelia)
+library(ggplot2)
+library(dplyr)
+library(purrr)
+library(tidyr)
+library(car)
+library(broom)
+library(caret)
+library(caretEnsemble)
+library(ROCR)
+library(broom)
+library(ggridges)
+library(caTools)
+library(tictoc)
+library(tidyverse)
+library(gridExtra)
+library(grid)
+library(ranger)
+```
+
+# READ FILES {.tabset .tabset-fade .tabset-pills}
+
+## Read Files
+
+## Summary
+
+Get Kaggle Data into **R**
+
+## Map Working Directory
+
+Map the saved location of your Titanic Files into **R**
+
+```{r}
+setwd("C:/Users/joshu/Documents/DataScience/Kaggle/Titanic")
+dir()
+```
+
+## Read Training Data
+
+Reference file in quotations
+
+```{r}
+train = read_csv(file.path("train.csv"), col_names = TRUE)
+str(train)
+```
+
+Review Training Data
+
+```{r}
+summary(train)
+```
+
+## Read Test Set Data
+
+Reference file in quotations
+
+```{r}
+test = read_csv(file.path("test.csv"), col_names = TRUE)
+str(test)
+```
+
+## Read Test Label Data
+
+Reference file in quotations
+
+```{r}
+test_label = read_csv("gender_submission.csv", col_names = TRUE)
+str(test_label)
+```
+
+## Merging Test Set and Test Label Set Together
+
+Merge Test and Label data frames together
+
+```{r}
+test = merge(test, test_label, by = "PassengerId")
+str(test)
+```
+
+
+# CLEAN DATA {.tabset .tabset-fade .tabset-pills}
+
+## Clean Data
+
+## Summary
+
+Ensure Data is ready to be modelled
+
+## Missing Data
+
+Identify missing data in Training Set
+
+```{r}
+missmap(train,main="Missing Vs Observed, Training Data", col=c("wheat", "darkred"), y.cex = 1, y.labels = NULL, y.at = NULL)
+```
+
+Identify missing data in Test Set
+
+```{r}
+missmap(test, main="Missing Vs Observed, Test Data", col=c("wheat", "darkred"), y.cex = 1, y.labels = NULL, y.at = NULL)
+```
+
+Count the number of NA missing values in train and test sets
+
+```{r}
+sapply(train, function(x) sum(is.na(x)))
+
+sapply(test, function(x) sum(is.na(x)))
+```
+
+## Multi-collinearity
+
+Identiy multi-collinearity between features
+
+```{r}
+
+head(train)
+
+numeric_columns = sapply(train, is.numeric)
+
+pairs(na.omit(train[,numeric_columns]))
+
+cor(na.omit(train[,numeric_columns]))
+
+
+```
+
+## Drop Cabin Feature
+
+**Cabin** has 686 training and 327 testing NA values, so drop the feature
+
+```{r}
+colnames(train)
+train1 = train[c(-11)]
+
+colnames(test)
+test1 = test[c(-10)]
+```
+
+## Impute Age NA's
+
+Impute 177 train and 86 test Age values with average Age
+
+```{r}
+
+dim(train1)
+dim(test1)
+
+
+
+
+impute_df = bind_rows(train1, test1)
+dim(impute_df)
+colnames(impute_df)
+impute_df=impute_df[,-2]
+head(impute_df)
+
+missing_Age = impute_df[is.na(impute_df$Age),]
+
+
+
+impute_train=impute_df[complete.cases(impute_df),]
+
+dim(impute_train)
+
+impute_df_test_Age = impute_df[is.na(impute_df$Age),]
+
+impute_Age_ranger = ranger(Age ~Pclass+Sex+SibSp+Parch+Fare+Embarked, data = impute_train)
+
+predict_impute_age=predict(impute_Age_ranger, impute_df_test_Age)
+
+
+impute_df$Age[is.na(impute_df$Age)] = predict_impute_age$predictions
+
+anyNA(impute_df$Age)
+
+
+```
+
+## Impute Fare NA's
+
+Impute the 1 NA Fare value with average Fare
+
+```{r}
+
+anyNA(impute_df$Fare)
+
+missing_Fare = impute_df[is.na(impute_df$Fare),]
+
+impute_Fare_ranger = ranger(Fare ~ Pclass+Sex+SibSp+Parch+Age+Embarked, data = impute_train)
+
+impute_Fare_test=impute_df[is.na(impute_df$Fare),]
+
+predict_impute_Fare=predict(impute_Fare_ranger, impute_Fare_test)
+
+impute_df$Fare[is.na(impute_df$Fare)] = predict_impute_Fare$predictions
+
+anyNA(impute_df$Fare)
+
+```
+
+## Impute Embarked NA's
+
+Impute the 2 NA Embarked values with the mode of Embark locations
+
+```{r}
+
+missing_Embarked = impute_df[is.na(impute_df$Embarked),]
+
+
+impute_Embarked_ranger = ranger(Embarked ~ Pclass+Sex+SibSp+Parch+Age+Fare, data = impute_train)
+
+impute_Embarked_test=impute_df[is.na(impute_df$Embarked),]
+
+predict_impute_Embarked=predict(impute_Embarked_ranger, impute_Embarked_test)
+
+impute_df$Embarked[is.na(impute_df$Embarked)] = predict_impute_Embarked$predictions
+
+anyNA(impute_df$Embarked)
+
+```
+
+## Confirm Imputations
+
+Count number of NA values and cofirm all have been handled
+
+```{r}
+sapply(train1, function(x) sum(is.na(x)))
+```
+
+And again, for the test set.
+
+```{r}
+sapply(test1, function(x) sum(is.na(x)))
+```
+
+Again, confirm all values have been imputed or properly handeld
+
+```{r, results="hide"}
+missmap(train1, main="Missing Vs Observed, Training Data", col=c("wheat", "darkred"), y.cex = 1, y.labels = NULL, y.at = NULL)
+
+missmap(test1, main="Missing Vs Observed, Test Data", col=c("wheat", "darkred"), y.cex = 1, y.labels = NULL, y.at = NULL)
+```
+
+
+## Create N_Family Feature
+
+Since there's high mutli-collinearity between **SibSp** and **Parch**, we'll combine them to create a new feature--**N_Family**
+
+```{r}
+train1$N_Family = train1$SibSp+train1$Parch+1
+test1$N_Family = test1$SibSp+test1$Parch+1
+```
+
+
+## Drop Ticket, SibSp and Parch Features
+
+Drop Ticket feature due to noise in data, drop SibSp and parch features as we combined them to eliminate high multicollinearity
+
+```{r}
+#Train
+head(train1)
+final_Columns=c("PassengerId", "Survived", "Pclass", "Sex", "Age", "Fare", "Embarked", "N_Family")
+train_Final = train1[,final_Columns]
+
+#Test
+test_Final = test1[,final_Columns]
+```
+
+
+## Transform **Age** Feature
+
+Log10 Age values to normalize distribution
+
+```{r, eval=FALSE}
+#Train
+g2 = ggplot(train_Final, aes(Age))+geom_histogram()
+g2
+g2 + scale_x_log10()
+g2 + scale_x_sqrt()
+ggplot(train_Final, aes(PassengerId, Age))+geom_point()
+
+range(train_Final$Age)
+train_Final$Age = sapply(train_Final$Age,log10)
+train_Final$Age[train_Final$Age<0]=0
+range(train_Final$Age)
+
+train_Final = train_Final%>%
+                      arrange(PassengerId)
+
+
+
+#Test
+range(test_Final$Age)
+test_Final$Age = sapply(test_Final$Age, log10)
+test_Final$Age[test_Final$Age<0]=0
+range(test_Final$Age)
+
+test_Final = test_Final%>%
+                      arrange(PassengerId)
+
+range(test_Final$Age)
+
+
+```
+
+Log10 Fare values to normalize distribution
+
+## Transform **Fare** Feature
+
+```{r, eval=FALSE}
+#Train
+g2 = ggplot(train_Final, aes(Fare))+geom_histogram()
+g2
+g2 + scale_x_log10()
+g2 + scale_x_sqrt()
+ggplot(train_Final, aes(PassengerId, Fare))+geom_point()
+
+range(train_Final$Fare)
+train_Final$Fare = sapply(train_Final$Fare,log10)
+train_Final$Fare[train_Final$Fare<0]=0
+range(train_Final$Fare)
+
+train_Final = train_Final%>%
+                      arrange(PassengerId)
+
+
+
+#Test
+range(test_Final$Fare)
+test_Final$Fare = sapply(test_Final$Fare, log10)
+test_Final$Fare[test_Final$Fare<0]=0
+range(test_Final$Fare)
+
+test_Final = test_Final%>%
+                      arrange(PassengerId)
+
+range(test_Final$Fare)
+
+
+```
+
+## Atomic Data Types
+
+Ensure all atomic data types are properly labeled
+
+```{r}
+# Train
+sapply(train_Final, class)
+train_Final$Sex = as.factor(train_Final$Sex)
+train_Final$Embarked = factor(train_Final$Embarked, levels = c("C","Q","S"))
+levels(train_Final$Embarked)
+train_Final$Survived = as.factor(train_Final$Survived)
+train_Final$Pclass = as.factor(train_Final$Pclass)
+sapply(train_Final, class)
+
+# Test
+sapply(test_Final, class)
+test_Final$Sex = as.factor(test_Final$Sex)
+test_Final$Embarked = factor(test_Final$Embarked, levels = c("C","Q","S"))
+
+test_Final$Survived = ifelse(test_Final$Survived==1, "S", "D")
+test_Final$Survived = factor(test_Final$Survived, levels = c("D","S"))
+test_Final$Pclass = as.factor(test_Final$Pclass)
+sapply(test_Final, class)
+
+
+```
+
+## OUTLIERS {.tabset .tabset-fade .tabset-pills}
+
+Remove outliers from each feature
+
+### Age
+
+Iteratively establish best outlier threshold with the outlier_stat object and model performance
+
+```{r}
+
+outlier_stat = 3
+
+
+# Review Feature Dispersion
+boxplot(train_Final[,-1], col = "blue", main = "Features Boxplot")
+quantile(train_Final$Age)
+
+# Quantify Upper & Lower Thresholds
+sd_Age = sd(train_Final$Age)
+mean_Age = mean(train_Final$Age)
+upper_Age = mean_Age + sd_Age *outlier_stat
+lower_Age = mean_Age - sd_Age *outlier_stat
+
+# Filter Outliers
+outliers_Age = train_Final%>%
+filter(Age > (mean_Age + outlier_stat*sd_Age) | Age < (mean_Age - outlier_stat*sd_Age))
+
+
+nrow(outliers_Age) / nrow(train_Final)
+outliers_Age
+
+```
+
+### Fare 
+
+Iteratively establish best outlier threshold with the outlier_stat object and model performance
+
+```{r}
+# Review Feature Dispersion
+
+boxplot(train_Final[,-c(1,5)], col = "blue", main = "Features Boxplot")
+
+# Quantify Upper & Lower Thresholds
+sd_Fare = sd(train_Final$Fare)
+mean_Fare = mean(train_Final$Fare)
+upper_Fare = mean_Fare + sd_Fare *outlier_stat
+lower_Fare = mean_Fare - sd_Fare *outlier_stat
+
+
+# Filter Outliers
+outliers_Fare = train_Final%>%
+filter(Fare > (mean_Fare + outlier_stat*sd_Fare) | Fare < (mean_Fare - outlier_stat*sd_Fare))
+
+nrow(outliers_Fare) / nrow(train_Final)
+
+outliers_Fare
+
+```
+
+### N_Family
+
+Iteratively establish best outlier threshold with the outlier_stat object and model performance
+
+```{r}
+
+
+
+# Review Feature Dispersion
+
+boxplot(train_Final[,-c(1,5)], col = "blue", main = "Features Boxplot")
+
+# Quantify Upper & Lower Thresholds
+sd_Family = sd(train_Final$N_Family)
+mean_Family = mean(train_Final$N_Family)
+upper_Family = mean_Family + sd_Family *outlier_stat
+lower_Family = mean_Family - sd_Family *outlier_stat
+
+
+# Filter Outliers
+outliers_Family = train_Final%>%
+filter(N_Family > (mean_Family + outlier_stat*sd_Family) | N_Family < (mean_Family - outlier_stat*sd_Family))
+
+nrow(outliers_Family) / nrow(train_Final)
+
+outliers_Family
+
+
+
+```
+### Remove Outliers
+
+```{r}
+# Combine All Outliers
+outliers_Total = bind_rows(outliers_Age, outliers_Family, outliers_Fare)
+
+# List Combined Outliers and Individual Outliers
+outliers_List = list(outliers_Total = outliers_Total, outliers_Age = outliers_Age, outliers_Family = outliers_Family, outliers_Fare = outliers_Fare)
+
+# Quantify Outlier Percentage
+(outlier_Percentage = map(outliers_List, function(x){   paste(round((nrow(x)/nrow(train_Final)*100), digits = 2), "%",sep= "")}))
+
+# Row Count Before Removing and After Removing Outliers 
+nrow(train_Final)
+train_Final = train_Final[-outliers_Total$PassengerId,]
+nrow(train_Final)
+```
+
+
+# STATISTICAL ASSUMPTIONS {.tabset .tabset-fade .tabset-pills}
+
+## Statistical Assumptions
+
+## Summary
+
+Adhere to logistic regression assumptions
+
+## Assumptions: 
+
+Logistic Regression Assumptions:  
+1. The outcome is binary  
+2. Linear relationship between logit of response and each predictor variable.
+3. No influential values (extreme or outliers) in the continuous predictors  
+4. No high intercorrelation (multicollinearity) among the predictors  
+
+## 1st Assumption: Binary Response
+
+Question: Is our response variable binary?  
+Answer: Yes
+
+```{r}
+class(train_Final$Survived)
+levels(train_Final$Survived)
+
+```
+
+## 2nd Assumption: Linear Logit-Feature Relationship
+
+Question: Are relationships linear between logit and features? 
+Answer: Yes, see below.
+
+$$logit(p) = log(p/(1-p))$$ 
+
+
+### Build Logistic Regression Model
+
+Model regression
+
+```{r}
+
+logitmodel = glm(Survived~Age+N_Family+Sex+Pclass+Fare, data = train_Final, family = binomial(link = 'logit'))
+summary(logitmodel)
+
+```
+
+Consider confidence intervals on each predictor
+
+```{r}
+confint(logitmodel)
+```
+
+### Predict Probabilities
+
+Predict Test set response values with trained glm model
+
+```{r}
+
+probabilities = predict(logitmodel, newdata = test_Final, type = "response")
+head(probabilities, n =10)
+
+```
+
+Select continuous variables to compare with logit values
+
+```{r}
+mydata = test_Final%>%
+  select_if(is.numeric)
+head(mydata)
+```
+
+Store continuous features names for reference
+
+```{r}
+predictors = colnames(mydata)
+print(predictors)
+```
+
+### Tidy Data with Logit Values
+
+Tidy data by gathering data, so each variable forms a column, each observation a row, and each type of observational unit a table
+
+```{r}
+mydata_logit = mydata%>%
+mutate(logit = log(probabilities/(1-probabilities)))%>%
+  gather(Features, Values, -c(PassengerId, logit))
+
+head(mydata_logit)
+unique(mydata_logit$Features)
+```
+
+### Visualize Feature, Logit Relationship
+
+As the Feature values increase from 0 onwards, different trends emerge, some being less linear than others, but all-in-all, none necessarily disproving the assumption of linearity between the Feature and logit values. The probability of survival increases with the Fare one paid to board the ship, and likewise, with the young and old in Age, and smaller families too.
+
+```{r, warning=FALSE}
+ggplot(mydata_logit, aes(Values, logit))+geom_point(size = 0.5, alpha = 0.5)+geom_smooth(method = "loess")+theme_bw()+scale_y_continuous(name = "logit")+scale_x_continuous()+(facet_wrap(~Features, scales = "free"))
+```
+
+## 3rd Assumption: No influential observations
+
+Question: Is our data free of outliers or high-leverage observations?
+Answer: 
+
+### Cooks Distance
+
+PassengerId's 58, 513, and 665 pose as potential influential observations
+
+```{r}
+plot(logitmodel, which = 4, id.n = 3)
+```
+
+### Any significant cooks distance, high-leverage observations
+
+We don't have any statistically significant cooks distance observations in our data, including PassengerId 58, 513, and 665 as seen in the above chart, while confirmed in the filter below.
+
+```{r}
+# logitmodel cooks distance
+cooks_d=cooks.distance(logitmodel)
+
+# logitmodel cooks distance statistic
+cooks_d_threshold=sqrt(((length(names(coef(logitmodel)))+1))/(length(train_Final$PassengerId)-length(names(coef(logitmodel)))-1))
+
+# identify significant cooks distance observations
+sum(cooks_d > cooks_d_threshold)
+
+```
+
+### Cook's Distance, Std. Residuals and Hat Leverage Values
+
+In the plot below, we see standardized residuals on the y-axis, leverage values on the x-axis, and cooks distance visualized by the size of circles for each observation. Remember, residuals measure the distance between our fitted and actual y-values and H-Hats measure the distance between our predictors x's values, the further apart, the more leverage. The combination of our y and x residuals feed into the size of the cooks distance, and thus, the circle's size--the bigger, the more extreme. PassengerId 665 is the most alerting observation, but nonetheless, not statistically significant.
+
+```{r, warning= FALSE}
+influencePlot(logitmodel, main = "Influence Plot", sub="Circle size is proportional to Cook's Distance", scale = 6,id=list(col=carPalette()))
+```
+
+### Logitmodel Fitted Statistics
+
+With the augment() function, we display the logitmodel's fitted statistics. We add an index to our output with the mutate() function to reference while we're tidying our data.
+
+```{r}
+options(scipen=0)
+
+model_data = augment(logitmodel)%>%
+  mutate(PassengerId = 1:nrow(train_Final))%>%
+  arrange(desc(.std.resid))
+
+model_data%>%
+  arrange(desc(.cooksd) & desc(.std.resid))%>%
+  filter(Sex == "female")
+head(model_data, n = 50)
+
+```
+
+
+
+### Homoscedasticity and Outliers via Residual Plot
+
+Question: Are the residuals homoscedastic?
+Answer: Yes, our residuals are homoscedastic as they are random and uncorrelated.
+
+```{r}
+ggplot(model_data, aes(PassengerId, .std.resid))+
+  geom_point(aes(color = Survived), alpha = .5) + 
+  theme_bw() + scale_y_continuous(limits = c(-4,4))
+```
+
+Question: Are any observations standardized residuals greater than 3 standard deviations from the fitted prediction? 
+Answer: No, as seen below, no observations have a standard deviation greater than 3 deviations. However, there are some observations that are beyond 2 standard deviations which may have some significance.
+
+```{r}
+model_data%>%
+  filter(abs(.std.resid)>3)
+```
+
+## 4th Assumption: No high multi-collinearity between predictor variables
+
+Question: Is multicollinearity present between our predictor variables?
+Answer: No, based on our VIF and correlation matrix, multi-collinearity is not present amongst our selected predictor variables.
+
+### VIF 
+
+Question: Any VIF's greater than 5 or 10?
+Answer: No, the predictors in our model don't suffer from multicollinearity.
+
+```{r}
+vif(logitmodel)
+vif(logitmodel)>5
+```
+
+### Correlation Matrix
+
+The highest correlation value we observe is between Fare and N_Family, but at .39, it's aways away from perfect correlation at 1, so these two aren't highly correlated
+
+```{r}
+pairs(mydata)
+cor(mydata, use="complete.obs", method="kendall")
+```
+
+
+
+
+# EXPLORATORY ANALYSIS {.tabset .tabset-fade .tabset-pills}
+
+## Exploratory Analysis
+
+## Summary
+
+## Visualization
+
+```{r}
+
+train_Final%>%
+  ggplot(aes(x = Fare, y = Age, color = Survived)) + geom_point()
+
+```
+
+## Men Die, Women Survive
+
+```{r, warning = FALSE}
+test_Final %>%
+  ggplot(aes(x = Age, y = probabilities, shape = as.factor(Survived), size = N_Family, color  = Sex)) + geom_point() + geom_smooth(method = "glm", method.args =list(family = "binomial"))  + facet_grid(rows = vars(Sex), cols = vars(Pclass)) +  theme_bw()+geom_hline(yintercept = .5, size = 2)
+
+```
+
+
+# TRAIN {.tabset .tabset-fade .tabset-pills}
+
+## Train
+
+## Summary
+
+Establish the models training Cross-Validation technique, hyperparameter tuning configuration, feature formula, and machine learning algorithms 
+
+## RANDOMIZE
+
+Uncorrelate any potential correlation between sequential observations i.e. PassengerId's by shuffling them
+
+```{r}
+
+set.seed(1)
+
+# Get the number of observations
+n_obs_Filtered = nrow(train_Final)
+
+# Shuffle row indices: permuted_rows
+permuted_rows = sample(n_obs_Filtered)
+
+# Randomly order data: train1
+train_Final = train_Final[permuted_rows,]
+
+# Partition Data into Training and Test sets
+
+partition_index = createDataPartition(train_Final$PassengerId, p = .9, list = FALSE)
+
+train_Final_Train = train_Final[partition_index,]
+
+train_Final_Test = train_Final[-partition_index,]
+
+# Change atomic data type for Survived in train & test
+
+train_Final_Train$Survived = ifelse(train_Final_Train$Survived==1, "S", "D")
+train_Final_Train$Survived = factor(train_Final_Train$Survived)
+levels(train_Final_Train$Survived)
+
+train_Final_Test$Survived = ifelse(train_Final_Test$Survived==1, "S", "D")
+train_Final_Test$Survived = factor(train_Final_Test$Survived)
+levels(train_Final_Test$Survived)
+
+```
+
+## FOLDS
+
+Create folds for cross-validation sampling to identify optimal tuning for models hyperparameters
+
+```{r}
+set.seed(1)
+
+# Examine datasets distribution
+
+table(train_Final_Train$Survived) / nrow(train_Final_Train)
+
+# Compare Class Distribution
+
+myFolds_Filtered = createFolds(train_Final_Train$Survived, k = 5)
+
+# Compare class distribution, to ensure each individual fold represents the overal population adequately, ensuring proportion equality amongst the response classes, as such:
+
+i = myFolds_Filtered$Fold1
+table(train_Final_Train$Survived[i]) / length(i)
+
+
+
+```
+
+## PARAMETERS
+
+Create objects to store model parameters for efficient coding and practicality
+
+```{r}
+formula_titanic = as.formula(Survived~Sex+Age+Fare+N_Family+Pclass)
+preProcess_titanic = c("center", "scale")
+tuneLength_titanic = 3
+metric_titanic = "Accuracy"
+maximize_titanic = TRUE
+method_titanic = list(glmnet="glmnet", glmboost = "glmboost", rf = "ranger", xgboost = "xgbTree", nnet = "nnet", naive_bayes = "naive_bayes")
+```
+
+## CONTROL
+
+Create different types of training control configurations to optimize your model sample tuning ability
+
+```{r}
+
+# Grid trainControl
+
+
+myControl_Grid = trainControl(
+  
+                                  method = "repeatedcv",
+                                  number = 5,
+                                  repeats = 3,
+                                  search = "grid",
+                                  summaryFunction = defaultSummary, #IMPORTANT THRESHOLD!
+                                  classProbs = TRUE,
+                                  verboseIter = TRUE,
+                                  savePredictions = TRUE,
+                                  allowParallel = TRUE,
+                                  index = myFolds_Filtered
+                            )
+
+
+# RANDOM trainControl Hyperparameter Selection
+
+myControl_Random = trainControl(
+                                   method = "repeatedcv",
+                                   number = 5,
+                                   repeats = 3,
+                                   search = "random",
+                                   #tuneLength = 100,
+                                   summaryFunction = defaultSummary,
+                                   classProbs = TRUE,
+                                   returnData = TRUE,
+                                   verboseIter = TRUE,
+                                   savePredictions = TRUE,
+                                   allowParallel = TRUE,
+                                   index = myFolds_Filtered
+                             )
+
+# Cross-Validation Hyperparameter Selection
+
+myControl_CV = trainControl(
+                                   method = "cv",
+                                   number = 5,
+                                   summaryFunction = defaultSummary,
+                                   classProbs = TRUE,
+                                   returnData = TRUE,
+                                   verboseIter = TRUE,
+                                   savePredictions = "final",
+                                   #tuneLength = 100,
+                                   allowParallel = TRUE,
+                                   index = myFolds_Filtered
+                              ) 
+
+
+# myControl has previously been created
+# getModelInfo() to see Hyper-Paramater
+
+```
+
+## MODEL
+
+Develop a list of models with selected parameters and a preferable train control sampling technique
+
+```{r, results= 'hide'}
+
+set.seed(1)
+
+tic()
+
+caret_Model_List = caretList(
+                             formula_titanic,
+                             data = train_Final_Train,
+                             trControl = myControl_CV,
+                             metric = "Accuracy",
+                             tuneList = list(
+                               
+caretModelSpec(method = method_titanic$glmnet, tuneLength = tuneLength_titanic, preProcess=c("center","scale")),
+caretModelSpec(method = method_titanic$glmboost, tuneLength = tuneLength_titanic, preProcess=c("center","scale")),
+caretModelSpec(method = method_titanic$rf, tuneLength = tuneLength_titanic, preProcess=c("center","scale")),
+caretModelSpec(method = method_titanic$xgboost, tuneLength = tuneLength_titanic, preProcess=c("center","scale")),
+caretModelSpec(method = method_titanic$nnet, tuneLength = tuneLength_titanic, preProcess=c("center","scale")),
+caretModelSpec(method = method_titanic$naive_bayes, tuneLength = tuneLength_titanic, preProcess=c("center","scale"))
+
+),
+
+                             continue_on_fail = FALSE
+                             
+                             
+                             )
+
+
+toc()
+```
+
+## Ensemble
+
+Ensemble your list of models to be optimally weighted for peak predictive performance 
+
+```{r, results= 'hide'}
+set.seed(1)
+
+ensemble_Model = caretEnsemble(caret_Model_List,
+                               metric = "Accuracy"
+
+
+                               )
+
+summary(ensemble_Model)
+
+```
+
+
+## Stack
+
+Stack the list of models to glean signal from residuals for peak predictive performance
+
+```{r, results= 'hide'}
+set.seed(1)
+
+stack_Model = caretStack(caret_Model_List,
+                         method = "glmnet",
+                         metric = "Accuracy"
+                         
+                         )
+
+
+summary(stack_Model)
+```
+
+# CV RESULTS {.tabset .tabset-fade .tabset-pills}
+
+## CV Results
+
+## Summary
+
+Evaluate the models' performance on the cross-validated folds
+
+## CV Visualizations (part 1)
+
+Visualize the models predicted performance on the cross-validated folds.
+
+```{r}
+
+# Resample Models
+resamples = resamples(caret_Model_List)
+
+# Extract data from resamples object
+resamples_list=map(resamples$values, ~.x)
+bind_resamples = bind_rows(resamples_list)
+gather_resamples = gather(bind_resamples, Model, Accuracy, -Resample)
+
+# Filter for Kappa
+Kappa_resamples = gather_resamples%>%
+  filter(str_detect(Model,"Kappa"))
+
+# Filter for Accuracy
+Accuracy_resamples = gather_resamples%>%
+  filter(str_detect(Model,"Accuracy"))
+
+# Change Accuracy column name to Kappa
+colnames(Kappa_resamples) = c("Resample", "Model", "Kappa")
+
+# Seperate the Model column into Model and Stat
+Accuracy_resamples = separate(Accuracy_resamples, Model, c("Model", "Stat"), by = "~")
+Kappa_resamples = separate(Kappa_resamples, Model, c("Model", "Stat"), by = "~")
+
+# Drop Stat Column
+Accuracy_resamples = Accuracy_resamples[,-3]
+Kappa_resamples = Kappa_resamples[,-3]
+
+# Join Accuracy and Kappa Data Frames
+join_resamples = left_join(Accuracy_resamples, Kappa_resamples, by = c("Resample", "Model"))
+
+# Plot Accuracy
+ggplot(join_resamples, aes(x = Accuracy, y = reorder(Model, Accuracy, max), fill = Model))+
+geom_density_ridges2(alpha = .6, scale = 6, jittered_points=TRUE, point_size = 4, point_shape="|", position = position_points_jitter(height=0), scale = .95)+theme_bw()+ggtitle("Model Training CV Accuracy Distribution") + theme_ridges(center = TRUE)
+
+# Plot Kappa
+ggplot(join_resamples,aes(x = Kappa, y = reorder(Model, Kappa, max), fill = Model))+
+geom_density_ridges2(alpha = .6, scale = 6, jittered_points=TRUE, point_size = 4, point_shape="|", position = position_points_jitter(height=0), scale = .95)+theme_bw()+ggtitle("Model Training CV Kappa Distribution") + theme_ridges(center = TRUE)
+
+
+```
+
+## CV Visualizations (part 2)
+
+Compare models' performance on cross-validated folds
+
+```{r}
+
+bwplot(resamples, metric = "Accuracy", main = "Bw plot: Training CV")
+
+dotplot(resamples, metric = "Accuracy", main = "Dot plot: Training CV")
+
+densityplot(resamples, metric = "Kappa", auto.key = TRUE, main = "Density plot: Training CV")
+
+densityplot(resamples, metric = "Accuracy", auto.key = TRUE, main = "Density plot: Training CV")
+
+modelCor(resamples)
+
+summary(resamples)
+
+resamples
+
+```
+
+## CV Visualizations (part 3)
+
+```{r}
+
+join_resamples%>%
+  ggplot(aes(x = reorder(Model, Accuracy, max), y = Accuracy, color = Model, size = Kappa)) + geom_jitter(width = .1, alpha = .5) + theme_bw() + ggtitle("Model Training CV Accuracy by Model")
+
+join_resamples%>%
+  ggplot(aes(x = Resample, y = Accuracy, color = Model, size = Kappa)) + geom_jitter(width = .1, alpha = .5) + theme_bw() + ggtitle("Model Training CV Accuracy by Fold")
+
+```
+
+
+## CV Variable Importance
+
+Determine which variables each model evaluates to be the most important when predicting the response
+
+```{r}
+
+ggplot(varImp(caret_Model_List$glmnet))+theme_bw()+ggtitle(labs(title = "GLMNET CV Variable Importance"))
+ggplot(varImp(caret_Model_List$glmboost))+theme_bw()+ggtitle(labs(title = "GLMboost CV Variable Importance"))
+#ggplot(varImp(caret_Model_List$ranger))+theme_bw()+ggtitle(labs(title = "Ranger CV Variable Importance"))
+ggplot(varImp(caret_Model_List$xgbTree))+theme_bw()+ggtitle(labs(title = "XgbTree CV Variable Importance"))
+ggplot(varImp(caret_Model_List$nnet))+theme_bw()+ggtitle(labs(title = "NNET CV Variable Importance"))
+#plot(varImp(caret_Model_List$naive_bayes))+theme_bw()+ggtitle(labs(title = "Naive Bayes CV Variable Importance"))
+
+```
+
+# OOS RESULTS  {.tabset .tabset-fade .tabset-pills}
+
+## OOS Results
+
+## Summary
+
+Predict out-of-sample outcomes with the fully trained and hypertuned models 
+
+## OOS Test
+
+Combine the ensemble and stack models with the list of models to predict our out-of-sample outcomes
+
+```{r}
+
+options(scipen=3)
+
+# List of Trained Models
+trained_model_List = list(
+                  ensemble = ensemble_Model,
+                  stack = stack_Model,
+                  glmnet = caret_Model_List$glmnet,
+                  glmboost = caret_Model_List$glmboost,
+                  ranger = caret_Model_List$ranger,
+                  xgbTree = caret_Model_List$xgbTree,
+                  nnet = caret_Model_List$nnet,
+                  naive_bayes = caret_Model_List$naive_bayes
+                  )
+
+# Predicted vs Actual Confusion Matrix 
+predict_Models_list_oos = lapply(trained_model_List, predict, newdata = train_Final_Test, type = "raw")
+predict_Models_df_oos = map_df(predict_Models_list_oos, ~.x)
+confusionMatrix_Models_oos = map(.x = predict_Models_df_oos, .f = confusionMatrix, train_Final_Test$Survived)
+print(confusionMatrix_Models_oos)
+
+# Model Prediction Accuracy Comparison 
+predict_Models_table_oos = map(predict_Models_df_oos, table, train_Final_Test$Survived)
+predict_Models_true_oos = map(map(predict_Models_table_oos, diag), sum)
+predict_Models_sum_oos = map(predict_Models_table_oos, sum)
+predict_Models_accuracy_oos = mapply('/', predict_Models_true_oos, predict_Models_sum_oos)
+predict_Models_accuracy_oos = round(predict_Models_accuracy_oos, digits = 3)
+predict_Models_accuracy_oos
+
+
+```
+
+## Graphing OOS Probabilities
+
+Visualize the seperation of predicted probabilities by each model
+
+```{r, warning = FALSE}
+
+# Kaggle Probabilities
+
+probabilities_oos = predict(trained_model_List, newdata = train_Final_Test, type = "prob")
+
+# Ensemble Model
+
+train_Final_Test %>%
+  ggplot(aes(x = Age, y = probabilities_oos$ensemble, shape = as.factor(Survived), size = N_Family, color  = Sex)) + geom_point() + geom_smooth(method = "glm", method.args =list(family = "binomial"), se = TRUE, alpha = .3) + geom_hline(yintercept = .5, size = 2)  + facet_grid(rows = vars(Sex), cols = vars(Pclass)) + labs(title = "Ensemble Model Kaggle Predictions")+ theme_bw()
+
+# Stack Model
+
+train_Final_Test %>%
+  ggplot(aes(x = Age, y = probabilities_oos$stack, shape = as.factor(Survived), size = N_Family, color  = Sex)) + geom_point() + geom_smooth(method = "glm", method.args =list(family = "binomial"), se = TRUE, alpha = .3) + geom_hline(yintercept = .5, size = 2)  + facet_grid(rows = vars(Sex), cols = vars(Pclass)) + labs(title = "Stack Model Kaggle Predictions")+ theme_bw()
+
+# Glmnet Model
+
+train_Final_Test %>%
+  ggplot(aes(x = Age, y = probabilities_oos$glmnet$S, shape = as.factor(Survived), size = N_Family, color  = Sex)) + geom_point() + geom_smooth(method = "glm", method.args =list(family = "binomial"), se = TRUE, alpha = .3) + geom_hline(yintercept = .5, size = 2)  + facet_grid(rows = vars(Sex), cols = vars(Pclass)) + labs(title = "Glmnet Model Kaggle Predictions")+ theme_bw()
+
+# Glmboost Model
+
+train_Final_Test %>%
+  ggplot(aes(x = Age, y = probabilities_oos$glmboost$S, shape = as.factor(Survived), size = N_Family, color  = Sex)) + geom_point() + geom_smooth(method = "glm", method.args =list(family = "binomial"), se = TRUE, alpha = .3) + geom_hline(yintercept = .5, size = 2)  + facet_grid(rows = vars(Sex), cols = vars(Pclass)) + labs(title = "Glmboost Model Kaggle Predictions")+ theme_bw()
+
+# Ranger Model
+
+train_Final_Test %>%
+  ggplot(aes(x = Age, y = probabilities_oos$ranger$S, shape = as.factor(Survived), size = N_Family, color  = Sex)) + geom_point() + geom_smooth(method = "glm", method.args =list(family = "binomial"), se = TRUE, alpha = .3) + geom_hline(yintercept = .5, size = 2)  + facet_grid(rows = vars(Sex), cols = vars(Pclass)) + labs(title = "Ranger Model Kaggle Predictions")+ theme_bw()
+
+# xgbTree Model
+
+train_Final_Test %>%
+  ggplot(aes(x = Age, y = probabilities_oos$xgbTree$S, shape = as.factor(Survived), size = N_Family, color  = Sex)) + geom_point() + geom_smooth(method = "glm", method.args =list(family = "binomial"), se = TRUE, alpha = .3) + geom_hline(yintercept = .5, size = 2)  + facet_grid(rows = vars(Sex), cols = vars(Pclass)) + labs(title = "xgbTree Model Kaggle Predictions")+ theme_bw()
+
+# nnet Model  
+
+train_Final_Test %>%
+  ggplot(aes(x = Age, y = probabilities_oos$nnet$S, shape = as.factor(Survived), size = N_Family, color  = Sex)) + geom_point() + geom_smooth(method = "glm", method.args =list(family = "binomial"), se = TRUE, alpha = .3) + geom_hline(yintercept = .5, size = 2)  + facet_grid(rows = vars(Sex), cols = vars(Pclass)) + labs(title = "Neural Net (nnet) Model Kaggle Predictions")+ theme_bw()
+
+# Model
+
+train_Final_Test %>%
+  ggplot(aes(x = Age, y = probabilities_oos$naive_bayes$S, shape = as.factor(Survived), size = N_Family, color  = Sex)) + geom_point() + geom_smooth(method = "glm", method.args =list(family = "binomial"), se = TRUE, alpha = .3) + geom_hline(yintercept = .5, size = 2)  + facet_grid(rows = vars(Sex), cols = vars(Pclass)) + labs(title = "Naive Bayes Model Kaggle Predictions")+ theme_bw()
+
+
+```
+
+
+# KAGGLE RESULTS {.tabset .tabset-fade .tabset-pills}
+
+## Kaggle Results
+
+## Summary
+
+Predict Kaggle Titanic Test outcomes with the fully trained and hypertuned models 
+
+## Kaggle Test
+
+Determine each models predictive performance on the unforeseen Titanic Test set
+
+```{r}
+
+# Confusion Matrix
+predict_Models_list_kaggle = lapply(trained_model_List, predict, newdata = test_Final, type = "raw")
+predict_Models_df_kaggle = map_df(predict_Models_list_kaggle, ~.x)
+confusionMatrix_Models_kaggle = map(.x = predict_Models_df_kaggle, .f = confusionMatrix, test_Final$Survived)
+print(confusionMatrix_Models_kaggle)
+
+# Model Accuracy Comparison
+predict_Models_table_kaggle = map(predict_Models_df_kaggle, table, test_Final$Survived)
+predict_Models_true_kaggle = map(map(predict_Models_table_kaggle, diag), sum)
+predict_Models_sum_kaggle = map(predict_Models_table_kaggle, sum)
+predict_Models_accuracy_kaggle = as.data.frame(predict_Models_true_kaggle)/length(test_Final$Survived)
+predict_Models_accuracy_kaggle = round(predict_Models_accuracy_kaggle, digits = 3)
+predict_Models_accuracy_kaggle
+
+```
+
+## Graphing Kaggle Probabilities
+
+Visualize the seperation of predicted probabilities by each model
+
+```{r, warning = FALSE}
+
+# Kaggle Probabilities
+
+probabilities_Kaggle = predict(trained_model_List, newdata = test_Final, type = "prob")
+
+# Ensemble Model
+
+test_Final %>%
+  ggplot(aes(x = Age, y = probabilities_Kaggle$ensemble, shape = as.factor(Survived), size = N_Family, color  = Sex)) + geom_point() + geom_smooth(method = "glm", method.args =list(family = "binomial")) + geom_hline(yintercept = .5, size = 2)  + facet_grid(rows = vars(Sex), cols = vars(Pclass)) + labs(title = "Ensemble Model Kaggle Predictions")+ theme_bw()
+
+# Stack Model
+
+test_Final %>%
+  ggplot(aes(x = Age, y = probabilities_Kaggle$stack, shape = as.factor(Survived), size = N_Family, color  = Sex)) + geom_point() + geom_smooth(method = "glm", method.args =list(family = "binomial")) + geom_hline(yintercept = .5, size = 2)  + facet_grid(rows = vars(Sex), cols = vars(Pclass)) + labs(title = "Stack Model Kaggle Predictions")+ theme_bw()
+
+# Glmnet Model
+
+test_Final %>%
+  ggplot(aes(x = Age, y = probabilities_Kaggle$glmnet$S, shape = as.factor(Survived), size = N_Family, color  = Sex)) + geom_point() + geom_smooth(method = "glm", method.args =list(family = "binomial")) + geom_hline(yintercept = .5, size = 2)  + facet_grid(rows = vars(Sex), cols = vars(Pclass)) + labs(title = "Glmnet Model Kaggle Predictions")+ theme_bw()
+
+# Glmboost Model
+
+test_Final %>%
+  ggplot(aes(x = Age, y = probabilities_Kaggle$glmboost$S, shape = as.factor(Survived), size = N_Family, color  = Sex)) + geom_point() + geom_smooth(method = "glm", method.args =list(family = "binomial")) + geom_hline(yintercept = .5, size = 2)  + facet_grid(rows = vars(Sex), cols = vars(Pclass)) + labs(title = "Glmboost Model Kaggle Predictions")+ theme_bw()
+
+# Ranger Model
+
+test_Final %>%
+  ggplot(aes(x = Age, y = probabilities_Kaggle$ranger$S, shape = as.factor(Survived), size = N_Family, color  = Sex)) + geom_point() + geom_smooth(method = "glm", method.args =list(family = "binomial")) + geom_hline(yintercept = .5, size = 2)  + facet_grid(rows = vars(Sex), cols = vars(Pclass)) + labs(title = "Ranger Model Kaggle Predictions")+ theme_bw()
+
+# xgbTree Model
+
+test_Final %>%
+  ggplot(aes(x = Age, y = probabilities_Kaggle$xgbTree$S, shape = as.factor(Survived), size = N_Family, color  = Sex)) + geom_point() + geom_smooth(method = "glm", method.args =list(family = "binomial")) + geom_hline(yintercept = .5, size = 2)  + facet_grid(rows = vars(Sex), cols = vars(Pclass)) + labs(title = "xgbTree Model Kaggle Predictions")+ theme_bw()
+
+# nnet Model  
+
+test_Final %>%
+  ggplot(aes(x = Age, y = probabilities_Kaggle$nnet$S, shape = as.factor(Survived), size = N_Family, color  = Sex)) + geom_point() + geom_smooth(method = "glm", method.args =list(family = "binomial")) + geom_hline(yintercept = .5, size = 2)  + facet_grid(rows = vars(Sex), cols = vars(Pclass)) + labs(title = "Neural Net (nnet) Model Kaggle Predictions")+ theme_bw()
+
+# Model
+
+test_Final %>%
+  ggplot(aes(x = Age, y = probabilities_Kaggle$naive_bayes$S, shape = as.factor(Survived), size = N_Family, color  = Sex)) + geom_point() + geom_smooth(method = "glm", method.args =list(family = "binomial")) + geom_hline(yintercept = .5, size = 2)  + facet_grid(rows = vars(Sex), cols = vars(Pclass)) + labs(title = "Naive Bayes Model Kaggle Predictions")+ theme_bw()
+
+
+```
+
+## Kaggle Variable Importance
+
+```{r}
+
+
+
+```
+
+# REFLECTING {.tabset .tabset-fade .tabset-pills}
+
+## Reflecting
+
+## Summary
+
+Review models predictive performances within CV, OOS, and Kaggle Test, against niave benchmarks
+
+## Phases of Models {.tabset .tabset-fade .tabset-pills}
+
+```{r}
+
+# Naive Predictive Strategies
+FP_strategy = sum(test_Final$Survived=="S")/length(test_Final$Survived)
+FN_strategy = sum(test_Final$Survived=="D")/length(test_Final$Survived)
+ALL_MEN_ALL_WOMEN = c(1,1,1,1,1,1)
+
+# 
+df_Models_Accuracy = data.frame(
+                        ensemble = mean(ensemble_Model$error$Accuracy),
+                        stack = mean(stack_Model$error$Accuracy),
+                        glmnet = mean(caret_Model_List$glmnet$results$Accuracy),
+                        glmboost = mean(caret_Model_List$glmboost$results$Accuracy),
+                        ranger = mean(caret_Model_List$ranger$results$Accuracy),
+                        xgbTree = mean(caret_Model_List$xgbTree$results$Accuracy),
+                        nnet = mean(caret_Model_List$nnet$results$Accuracy),
+                        naive_bayes = mean(caret_Model_List$naive_bayes$results$Accuracy)
+                        
+)
+
+
+#
+
+Accuracy_Model_list = list(
+glmnet = data.frame(caret_Model_List$glmnet$results$Accuracy),
+glmboost = data.frame(caret_Model_List$glmboost$results$Accuracy),
+rf = data.frame(caret_Model_List$ranger$results$Accuracy),
+xgboost = data.frame(caret_Model_List$xgbTree$results$Accuracy),
+nnet = data.frame(caret_Model_List$nnet$results$Accuracy),
+naive_bayes = data.frame(caret_Model_List$naive_bayes$results$Accuracy)
+)
+
+# Performance Metrics
+
+predict_Models_Comparison = rbind(
+  
+      MEN_die_WOMEN_live = ALL_MEN_ALL_WOMEN,
+      
+      diff_1 = FP_strategy - ALL_MEN_ALL_WOMEN,
+      
+      Everybody_Lives = c(FP_strategy, FP_strategy, FP_strategy, FP_strategy, FP_strategy, FP_strategy),
+      
+      diff_2 = FN_strategy - FP_strategy,
+      
+      Everybody_Dies = c(FN_strategy, FN_strategy, FN_strategy, FN_strategy, FN_strategy, FN_strategy),
+      
+      diff_3 = df_Models_Accuracy - FN_strategy,
+      
+      OOS_CV_Training_Accuracy = df_Models_Accuracy,
+      
+      diff_4 = predict_Models_accuracy_oos - df_Models_Accuracy,
+      
+      OOS_Test_Accuracy = predict_Models_accuracy_oos,
+      
+      diff_5 = predict_Models_accuracy_kaggle - predict_Models_accuracy_oos,
+     
+      Kaggle_Test_Accuracy =  predict_Models_accuracy_kaggle
+     
+)
+
+predict_Models_Comparison
+
+```
+
+# SAVING PREDICTION {.tabset .tabset-fade .tabset-pills}
+
+## Saving Prediction
+
+## Summary
+
+Select best model and save predictions for Kaggle's Titanic Test set 
+
+## Model Selection
+
+Glmboost's model provided the highest Accuracy within CV, OOS, and Test sets, and seperated the predicted probabilities the most
+
+```{r}
+
+mean(predict_Models_df_kaggle$naive_bayes == test_Final$Survived)
+
+```
+
+## Combine Predictions with PassengerId 
+
+Convert predicted S and D values to 1 and 0 values, then combine with PassengerId in data frame 
+
+```{r}
+
+Predicted_Survived_Submission=ifelse(predict_Models_df_kaggle$ranger == "S", 1,0)
+
+test_Submission = data.frame(PassengerId=test_Final$PassengerId, Survived = Predicted_Survived_Submission)
+
+```
+
+## Write Results to File
+
+```{r, eval=TRUE}
+write.csv(test_Submission, file = 'Kaggle_Titanic_Submission_3.csv', row.names = FALSE)
+```
+
