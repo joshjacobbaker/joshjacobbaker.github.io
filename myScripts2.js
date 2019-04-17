@@ -14,7 +14,7 @@ function changeImgj(){
 	document.slidej.src = imagesj[j];
 
 	// Check If Index Is Under Max
-	if(j < images.length - 1){
+	if(j < imagesj.length - 1){
 	  // Add 1 to Index
 	  j++; 
 	} else { 
