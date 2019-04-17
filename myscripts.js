@@ -47,9 +47,7 @@ imagesk[6] = "Kanban_3.PNG";
 imagesk[7] = "Kanban_2.PNG";
 imagesk[8] = "Kanban_1.PNG";
 imagesk[9] = "Kanban_0.PNG";
-imagesk[10] = "Nylatech_R_10.jpg";
-imagesk[11] = "Nylatech_R_11.jpg";
-imagesk[12] = "Nylatech_R_12.jpg";
+
 
 
 
