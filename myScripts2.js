@@ -23,7 +23,7 @@ function changeImgj(){
 	}
 
 	// Run function every x seconds
-	setTimeout("changeImgj()", time);
+	setTimeout("changeImgj()", timej);
 }
 
 // Run function when page loads
