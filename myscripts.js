@@ -65,10 +65,10 @@ imagesj[12] = "Nylatech_After_Forklift.PNG";
 
 // Change Image
 function changejImg(){
-	document.slidej.src = images[j];
+	document.slidej.src = imagesj[j];
 
 	// Check If Index Is Under Max
-	if(i < images.length - 1){
+	if(i < imagesj.length - 1){
 	  // Add 1 to Index
 	  j++; 
 	} else { 
