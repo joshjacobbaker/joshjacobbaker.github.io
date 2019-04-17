@@ -47,8 +47,8 @@ imagesk[6] = "Kanban_4.PNG";
 imagesk[7] = "Kanban_3.PNG";
 imagesk[8] = "Kanban_2.PNG";
 imagesk[9] = "Kanban_1.PNG";
-imagesk[9] = "Kanban_0.PNG";
-imagesk[10] = "kanban_0_Reorder.PNG";
+imagesk[10] = "Kanban_0.PNG";
+imagesk[11] = "kanban_0_Reorder.PNG";
 
 
 
