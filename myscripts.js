@@ -1,7 +1,8 @@
 
-var i=j = 0; 			// Start Point
+var i=j=k = 0; 			// Start Point
 var images = [];	// Images Array
 var imagesj =[];
+var imagesk = [];
 var time = 2000;	// Time Between Switch
 	 
 // Image List
@@ -34,12 +35,29 @@ imagesj[10] = "Nylatech_R_10.jpg";
 imagesj[11] = "Nylatech_R_11.jpg";
 imagesj[12] = "Nylatech_R_12.jpg";
 
+// Imagesk List
+
+imagesk[0] = "Kanban_9.PNG";
+imagesk[1] = "Kanban_8.PNG";
+imagesk[2] = "Kanban_7.PNG";
+imagesk[3] = "Kanban_6.PNG";
+imagesk[4] = "Kanban_5.PNG";
+imagesk[5] = "Kanban_4.PNG";
+imagesk[6] = "Kanban_3.PNG";
+imagesk[7] = "Kanban_2.PNG";
+imagesk[8] = "Kanban_1.PNG";
+imagesk[9] = "Kanban_0.PNG";
+imagesk[10] = "Nylatech_R_10.jpg";
+imagesk[11] = "Nylatech_R_11.jpg";
+imagesk[12] = "Nylatech_R_12.jpg";
+
 
 
 // Change Image
 function changeImg(){
 	document.slide.src = images[i]
-	document.slidej.src = imagesj[j];
+	document.slidej.src = imagesj[j]
+	document.slidek.src = imagesk[k];
 
 	// Check If Index Is Under Max
 	if(i < images.length - 1){
@@ -51,6 +69,13 @@ function changeImg(){
 		// Reset Back To O
 		i = 0
 		j = 0;
+	}
+	
+	if(k < images.length - 1){
+		// Add 1 to Index
+		k++;
+	} else {
+		k = 0;
 	}
 
 	// Run function every x seconds
