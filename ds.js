@@ -24,7 +24,7 @@ function changeImg(){
 		
 	} else { 
 		// Reset Back To O
-		m = 0;
+		m = 0
 	}
 	
 	
