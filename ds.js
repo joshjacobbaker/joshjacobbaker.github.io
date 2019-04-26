@@ -1,7 +1,4 @@
-var i=j=k=m = 0; 			// Start Point
-var images = [];	// Images Array
-var imagesj =[];
-var imagesk = [];
+var m = 0; 			// Start Point
 var imagesm = [];
 var time = 2000;	// Time Between Switch
 	 
@@ -21,7 +18,7 @@ function changeImg(){
 	document.slidem.src = imagesm[m];
 
 	// Check If Index Is Under Max
-	if(m < images.length - 1){
+	if(m < imagesm.length - 1){
 	  // Add 1 to Index
 		m++;
 		
