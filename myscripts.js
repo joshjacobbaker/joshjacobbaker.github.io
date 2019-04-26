@@ -3,6 +3,7 @@ var i=j=k=m = 0; 			// Start Point
 var images = [];	// Images Array
 var imagesj =[];
 var imagesk = [];
+var imagesm = [];
 var time = 2000;	// Time Between Switch
 	 
 // Titanic OOS prob images
