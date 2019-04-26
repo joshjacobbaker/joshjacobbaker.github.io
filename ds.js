@@ -14,7 +14,7 @@ imagesm[5] = "xgbTree_oos_final.PNG";
 
 
 // Change Image
-function changeImg(){
+function changeImg2(){
 	document.slidem.src = imagesm[m];
 
 	// Check If Index Is Under Max
@@ -30,9 +30,9 @@ function changeImg(){
 	
 	
 	// Run function every x seconds
-	setTimeout("changeImg()", time);
+	setTimeout("changeImg2()", time);
 }
 
 
 // Run function when page loads
-window.onload=changeImg;
+window.onload=changeImg2;
