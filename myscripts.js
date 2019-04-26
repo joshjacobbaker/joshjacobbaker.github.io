@@ -1,17 +1,10 @@
 
-var i=j=k=m = 0; 			// Start Point
+var i=j=k = 0; 			// Start Point
 var images = [];	// Images Array
 var imagesj =[];
 var imagesk = [];
 var imagesm = [];
 var time = 2000;	// Time Between Switch
-
-imagesm[0] = "ensemble_oos_final.PNG";
-imagesm[1] = "glmboost_oos_final.PNG";
-imagesm[2] = "nnet_oos_final.PNG";
-imagesm[3] = "ranger_oos_final.PNG";
-imagesm[4] = "stack_oos_final.PNG";
-imagesm[5] = "xgbTree_oos_final.PNG";
 
 // Image List
 images[0] = "Nylatech_Before_Forklift.PNG";
@@ -64,8 +57,7 @@ imagesk[11] = "Kanban_0_Reorder.PNG";
 function changeImg(){
 	document.slide.src = images[i]
 	document.slidej.src = imagesj[j]
-	document.slidek.src = imagesk[k]
-	document.slidem.src = imagesm[m];
+	document.slidek.src = imagesk[k];
 
 	// Check If Index Is Under Max
 	if(i < images.length - 1){
@@ -86,11 +78,6 @@ function changeImg(){
 		k = 0;
 	}
 	
-	if(m < imagesm.length - 1){
-		m++;
-	}else{
-	m = 0;	
-	}
 
 	
 	
