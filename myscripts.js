@@ -57,8 +57,7 @@ imagesk[11] = "Kanban_0_Reorder.PNG";
 function changeImg(){
 	document.slide.src = images[i]
 	document.slidej.src = imagesj[j]
-	document.slidek.src = imagesk[k]
-	document.slidem.src = imagesm[m];
+	document.slidek.src = imagesk[k];
 
 	// Check If Index Is Under Max
 	if(i < images.length - 1){
