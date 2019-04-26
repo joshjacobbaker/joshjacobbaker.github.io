@@ -6,7 +6,7 @@ var imagesk = [];
 var imagesm = [];
 var time = 2000;	// Time Between Switch
 	 
-// Titanic OOS prob images
+// Titanic OOS prob images "m"
 
 imagesm[0] = "ensemble_oos_final.PNG";
 imagesm[1] = "glmboost_oos_final.PNG";
