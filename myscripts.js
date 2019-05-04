@@ -1,9 +1,10 @@
 
-var i=j=k = 0; 			// Start Point
+var i=j=k=L = 0; 			// Start Point
 var images = [];	// Images Array
 var imagesj =[];
 var imagesk = [];
 var imagesm = [];
+var imagesl = [];
 var time = 2000;	// Time Between Switch
 
 // Image List
@@ -51,13 +52,22 @@ imagesk[9] = "Kanban_1.PNG";
 imagesk[10] = "Kanban_0.PNG";
 imagesk[11] = "Kanban_0_Reorder.PNG";
 
+// ImagesL
+
+imagesl[0] = "Boeing_1.jpg";
+imagesL[1] = "Boeing_2.jpg";
+imagesL[2] = "Boeing_3.jpg";
+imagesL[3] = "Boeing_4.jpg";
+imagesL[4] = "Boeing_5.jpg";
+
 
 
 // Change Image
 function changeImg(){
 	document.slide.src = images[i]
 	document.slidej.src = imagesj[j]
-	document.slidek.src = imagesk[k];
+	document.slidek.src = imagesk[k]
+	document.slideL.src = imagesL[L];
 
 	// Check If Index Is Under Max
 	if(i < images.length - 1){
@@ -78,7 +88,13 @@ function changeImg(){
 		k = 0;
 	}
 	
-
+	IF(L < imagesL.length - 1){
+		// Add 1 to Index
+		L++;
+	}else{
+		L=0;
+		
+	}
 	
 	
 	// Run function every x seconds
