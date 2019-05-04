@@ -4,7 +4,7 @@ var images = [];	// Images Array
 var imagesj =[];
 var imagesk = [];
 var imagesm = [];
-var imagesl = [];
+var imagesL = [];
 var time = 2000;	// Time Between Switch
 
 // Image List
