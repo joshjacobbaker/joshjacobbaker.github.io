@@ -54,7 +54,7 @@ imagesk[11] = "Kanban_0_Reorder.PNG";
 
 // ImagesL
 
-imagesl[0] = "Boeing_1.jpg";
+imagesL[0] = "Boeing_1.jpg";
 imagesL[1] = "Boeing_2.jpg";
 imagesL[2] = "Boeing_3.jpg";
 imagesL[3] = "Boeing_4.jpg";
