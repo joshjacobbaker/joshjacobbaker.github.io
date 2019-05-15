@@ -1,11 +1,13 @@
 
-var i=j=k=L = 0; 			// Start Point
+var i=j=k=L=m = 0; 			// Start Point
 var images = [];	// Images Array
 var imagesj =[];
 var imagesk = [];
 var imagesm = [];
 var imagesL = [];
+var imagesm = [];
 var time = 2000;	// Time Between Switch
+
 
 // Image List
 images[0] = "Nylatech_Before_Forklift.PNG";
@@ -59,6 +61,14 @@ imagesL[1] = "Boeing_2.jpg";
 imagesL[2] = "Boeing_3.jpg";
 imagesL[3] = "Boeing_4.jpg";
 
+// Titanic imagesm
+imagesm[0] = "ensemble_oos_final.PNG";
+imagesm[1] = "glmboost_oos_final.PNG";
+imagesm[2] = "nnet_oos_final.PNG";
+imagesm[3] = "ranger_oos_final.PNG";
+imagesm[4] = "stack_oos_final.PNG";
+imagesm[5] = "xgbTree_oos_final.PNG";
+
 
 
 // Change Image
@@ -66,7 +76,8 @@ function changeImg(){
 	document.slide.src = images[i]
 	document.slidej.src = imagesj[j]
 	document.slidek.src = imagesk[k]
-	document.slideL.src = imagesL[L];
+	document.slideL.src = imagesL[L]
+	document.slidem.src = imagesm[m];
 
 	// Check If Index Is Under Max
 	if(i < images.length - 1){
@@ -92,6 +103,14 @@ function changeImg(){
 		L++;
 	}else{
 		L=0;
+		
+	}
+	
+		if(L < imagesm.length - 1){
+		// Add 1 to Index
+		m++;
+	}else{
+		m=0;
 		
 	}
 	
