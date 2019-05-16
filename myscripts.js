@@ -106,7 +106,7 @@ function changeImg(){
 		
 	}
 	
-		if(m < imagesm.length - 1){
+	if(m < imagesm.length - 1){
 		// Add 1 to Index
 		m++;
 	}else{
