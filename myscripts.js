@@ -5,7 +5,6 @@ var imagesj =[];
 var imagesk = [];
 var imagesm = [];
 var imagesL = [];
-var imagesm = [];
 var time = 2000;	// Time Between Switch
 
 
