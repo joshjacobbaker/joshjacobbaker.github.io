@@ -11,9 +11,10 @@
         <a id="header-title" href="index.html">My Blog</a>
         <ul id="header-nav">
           <li><a href="about.html">About</a></li>
-          <li><a href="wwu.html">WWU</a></li>
+          <li><a href="wwu.html">WWU</a><li>
           <li><a href="projects.html">Projects</a></li>
-          <li><a href="Certifications.html">Certifications</a></li>
+          <li><a href="Certifications.html">Certifications</a></li>     
+          
         </ul>
       </div>
     </div>
