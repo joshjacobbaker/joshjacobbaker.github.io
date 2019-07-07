@@ -4,6 +4,7 @@
     <title>Joshua Baker's Portfolio</title>
     <link rel="stylesheet"
     type="text/css" href="styles.css">
+    <script src="myscripts.js"></script>
   </head>
   <body>
     <div id="header">
