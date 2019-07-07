@@ -132,9 +132,11 @@ p {
 }
 
 .side-by-side {
-   float: left;
+
+}
+
+.xyz{
+  float: left;
   width: 50%;
   padding: 5px;
 }
-
-.xyz{}
